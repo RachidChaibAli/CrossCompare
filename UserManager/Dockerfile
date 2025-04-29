@@ -5,7 +5,7 @@ FROM openjdk:25-jdk-slim
 WORKDIR /app
 
 # Copia el archivo JAR generado en tu máquina al contenedor
-COPY out/artifacts/*.jar app.jar
+COPY target/*.jar app.jar
 
 # Expone el puerto por defecto de Spring Boot (ajusta si usas otro)
 EXPOSE 8080
