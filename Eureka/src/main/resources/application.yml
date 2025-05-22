@@ -1,0 +1,25 @@
+# Configuración básica de Eureka Server
+spring:
+    application:
+        name: eureka-server
+
+server:
+    port: 8761
+
+# Configuración de Eureka Server
+# No se registra a sí mismo ni busca otros servicios
+# Si quieres que otros microservicios se registren aquí, deja estos en false
+
+eureka:
+    instance:
+        hostname: localhost
+        prefer-ip-address: true
+    client:
+        register-with-eureka: false
+        fetch-registry: false
+        service-url:
+            defaultZone: http://${eureka.instance.hostname}:${server.port}/eureka/
+
+
+
+

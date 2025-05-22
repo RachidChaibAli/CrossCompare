@@ -1,11 +1,6 @@
 # Use an official OpenJDK 24 image as the base image
 FROM openjdk:25-jdk-slim
 
-# Instala dependencias necesarias
-RUN apt-get update && \
-    apt-get install -y wget unzip xvfb chromium chromium-driver && \
-    rm -rf /var/lib/apt/lists/*
-
 # Set the working directory in the container
 WORKDIR /app
 

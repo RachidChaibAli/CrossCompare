@@ -48,3 +48,39 @@ services:
     image: rachidchaibugr/user-manager
     ports:
       - "8084:8080"
+
+  redis:
+    image: redis:7.2-alpine
+    container_name: redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+
+  config-server:
+    build:
+      context: ./ConfigServer
+      dockerfile: Dockerfile
+    image: rachidchaibugr/config-server
+    ports:
+      - "8888:8888"
+
+  eureka:
+    build:
+      context: ./Eureka
+      dockerfile: Dockerfile
+    image: rachidchaibugr/eureka
+    ports:
+      - "8761:8761"
+
+  unificador:
+    build:
+      context: ./Unificador
+      dockerfile: Dockerfile
+    image: rachidchaibugr/unificador
+    ports:
+      - "8085:8080"
+
+volumes:
+  redis_data:
