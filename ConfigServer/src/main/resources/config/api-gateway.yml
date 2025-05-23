@@ -1,0 +1,36 @@
+server:
+    port: 8080
+
+eureka:
+    client:
+        defaultZone: http://eureka:8761/eureka/
+
+spring:
+  cloud:
+    gateway:
+        routes:
+          - id: playstation-scraper
+            uri: lb://playstation-scraper
+            predicates:
+              - Path=/playstation-scraper/**
+              
+          - id: xbox-scraper
+            uri: lb://xbox-scraper
+            predicates:
+              - Path=/xbox-scraper/**
+
+          - id: steam-api
+            uri: lb://steam-api
+            predicates:
+              - Path=/steam-api/**
+
+          - id: user-manager
+            uri: lb://user-manager
+            predicates:
+              - Path=/user-manager/**
+
+          - id: unificador
+            uri: lb://unificador
+            predicates:
+              - Path=/unificador/**
+

@@ -1,0 +1,5 @@
+spring:
+    application:
+        name: xbox-scraper
+    config:
+        import: "optional:configserver:http://config-server:8088"

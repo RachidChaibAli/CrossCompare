@@ -1,8 +1,8 @@
 server:
-    port: 8088
+  port: 8088
 
 spring:
-    application:
-        name: ConfigServer
-    profiles:
-      active: native
+  application:
+    name: config-server
+  profiles:
+    active: native

@@ -1,5 +1,5 @@
 spring:
   application:
-    name: ApiGateway
+    name: api-gateway
   config:
-    import: "optional:configserver:http://ConfigServer:8888"
+    import: "optional:configserver:http://config-server:8088"
