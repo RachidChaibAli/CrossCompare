@@ -7,27 +7,10 @@ import org.springframework.web.client.RestClient;
 
 @Configuration
 public class RestClientConfig {
-    @Bean
-    @LoadBalanced
-    public RestClient playstationRestClient() {
-        return RestClient.builder()
-                .baseUrl("http://playstation-scraper") // Nombre del servicio y puerto interno en Docker Compose
-                .build();
-    }
 
     @Bean
-    @LoadBalanced
-    public RestClient xboxRestClient() {
-        return RestClient.builder()
-                .baseUrl("http://xbox-scraper") // Nombre del servicio y puerto interno en Docker Compose
-                .build();
-    }
-
-    @Bean
-    @LoadBalanced
-    public RestClient steamRestClient() {
-        return RestClient.builder()
-                .baseUrl("http://steam-api") // Nombre del servicio y puerto interno en Docker Compose
-                .build();
+    @LoadBalanced // Habilita el balanceo de carga y descubrimiento de servicios
+    public RestClient.Builder restClientBuilder() {
+        return RestClient.builder();
     }
 }

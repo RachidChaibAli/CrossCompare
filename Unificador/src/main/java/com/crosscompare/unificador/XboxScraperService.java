@@ -1,6 +1,7 @@
 package com.crosscompare.unificador;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cloud.client.loadbalancer.LoadBalanced;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 
@@ -9,13 +10,15 @@ public class XboxScraperService {
     private final RestClient xboxRestClient;
 
     @Autowired
-    public XboxScraperService(RestClient xboxRestClient) {
-        this.xboxRestClient = xboxRestClient;
+    public XboxScraperService(@LoadBalanced RestClient.Builder restClientBuilder) {
+        this.xboxRestClient = restClientBuilder
+                .baseUrl("http://xbox-scraper") // Nombre del servicio en Eureka
+                .build();
     }
 
     public String buscarJuegos() {
         return xboxRestClient.get()
-                .uri("/hola") // Ruta relativa en el microservicio xbox-scraper
+                .uri("/hola")
                 .retrieve()
                 .body(String.class);
     }
