@@ -2,7 +2,7 @@ spring:
     application:
         name: xbox-scraper
     config:
-        import: "configserver:http://config-server:8088"
+        import: "optional:configserver:http://config-server:8088"
         fail-fast: true
         retry:
           max-attempts: 5
