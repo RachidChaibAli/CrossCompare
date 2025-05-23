@@ -9,8 +9,10 @@ services:
     ports:
       - "8080:8080"
     depends_on:
-      - eureka
-      - config-server
+      eureka:
+        condition: service_healthy
+      config-server:
+        condition: service_healthy
 
   frontend:
     build:
@@ -30,8 +32,10 @@ services:
     ports:
       - "8081:8080"
     depends_on:
-      - eureka
-      - config-server
+      eureka:
+        condition: service_healthy
+      config-server:
+        condition: service_healthy
 
   xbox-scraper:
     build:
@@ -41,8 +45,10 @@ services:
     ports:
       - "8082:8080"
     depends_on:
-      - eureka
-      - config-server
+      eureka:
+        condition: service_healthy
+      config-server:
+        condition: service_healthy
 
   steam-api:
     build:
@@ -52,8 +58,10 @@ services:
     ports:
       - "8083:8080"
     depends_on:
-      - eureka
-      - config-server
+      eureka:
+        condition: service_healthy
+      config-server:
+        condition: service_healthy
 
   user-manager:
     build:
@@ -63,8 +71,10 @@ services:
     ports:
       - "8084:8080"
     depends_on:
-      - eureka
-      - config-server
+      eureka:
+        condition: service_healthy
+      config-server:
+        condition: service_healthy
 
   redis:
     image: redis:7.2-alpine
@@ -83,7 +93,13 @@ services:
     ports:
       - "8088:8088"
     depends_on:
-      - eureka
+      eureka:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "sh", "-c", "curl -s http://localhost:8088/actuator/health | grep '\"status\":\"UP\"'"]
+      interval: 10s
+      timeout: 5s
+      retries: 15
 
   eureka:
     build:
@@ -92,6 +108,11 @@ services:
     image: rachidchaibugr/eureka
     ports:
       - "8761:8761"
+    healthcheck:
+      test: ["CMD", "sh", "-c", "curl -s http://localhost:8761/actuator/health | grep '\"status\":\"UP\"'"]
+      interval: 10s
+      timeout: 5s
+      retries: 15
 
   unificador:
     build:
@@ -101,8 +122,10 @@ services:
     ports:
       - "8085:8080"
     depends_on:
-      - eureka
-      - config-server
+      eureka:
+        condition: service_healthy
+      config-server:
+        condition: service_healthy
 
 volumes:
   redis_data:

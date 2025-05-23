@@ -5,6 +5,10 @@ eureka:
     client:
       serviceUrl:
         defaultZone: http://eureka:8761/eureka/
+      fetch-registry: true
+      register-with-eureka: true
+      registry-fetch-interval-seconds: 5
+      initial-instance-info-replication-interval-seconds: 5
 
 spring:
     cloud:
