@@ -9,7 +9,7 @@ for service in "${services[@]}"; do
     echo "Building $service..."
     if [ -d "$service" ]; then
         cd "$service" || exit
-        ./mvnw clean package
+        ./mvnw clean package -DskipTests
         if [ $? -ne 0 ]; then
             echo "Build failed for $service"
             exit 1

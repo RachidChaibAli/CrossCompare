@@ -14,3 +14,7 @@ spring:
     cloud:
       discovery:
         enabled: true
+    data:
+        redis:
+            host: redis
+            port: 6379

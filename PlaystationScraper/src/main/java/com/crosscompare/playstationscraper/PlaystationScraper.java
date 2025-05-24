@@ -10,6 +10,8 @@ import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeOptions;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
@@ -18,12 +20,18 @@ import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
 @Service
 public class PlaystationScraper {
+
+    @Autowired
+    private RedisTemplate<String, Object> redisTemplate;
+
     private WebDriver driver;
 
     public PlaystationScraper() {
@@ -121,9 +129,17 @@ public class PlaystationScraper {
             String rating = doc.select("span[data-qa=mfe-star-rating#overall-rating#average-rating]").text();
 
             gameInfo = new Juego(gameTitle, platforms, priceFinal, publisher, releaseDate, description, rating);
+
+
+            Map<String, Object> mensaje = new HashMap<>();
+            mensaje.put("productor", "PlaystationScraper");
+            mensaje.put("juego", gameInfo.toString());
+            redisTemplate.opsForStream().add("UnificadorStream", mensaje);
         } else {
             System.out.println("Error: No se ha encontrado la información del juego");
         }
+
+
 
         return CompletableFuture.completedFuture(gameInfo);
     }

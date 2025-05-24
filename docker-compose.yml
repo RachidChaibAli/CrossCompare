@@ -75,7 +75,7 @@ services:
         condition: service_healthy
 
   redis:
-    image: redis:7.2-alpine
+    image: redis:8.0.1-alpine
     container_name: redis
     ports:
       - "6379:6379"
@@ -125,5 +125,23 @@ services:
       config-server:
         condition: service_healthy
 
+  unificador-db:
+    image: mariadb:11.7.2
+    container_name: unificador-db
+    restart: unless-stopped
+    env_file:
+      - ./unificador-db-secrets.env
+    ports:
+      - "3306:3306"
+    volumes:
+      - unificador_db_data:/var/lib/mysql
+      - ./db-unificador-init.sql:/docker-entrypoint-initdb.d/db-unificador-init.sql:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
 volumes:
   redis_data:
+  unificador_db_data:

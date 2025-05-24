@@ -4,6 +4,8 @@ import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.regex.Matcher;
@@ -23,11 +25,17 @@ import org.openqa.selenium.edge.EdgeDriver;
 import org.openqa.selenium.edge.EdgeOptions;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 @Service
 public class XboxScraper {
+
+    @Autowired
+    private RedisTemplate<String, Object> redisTemplate;
+
     private WebDriver driver;
 
     public XboxScraper() {
@@ -128,6 +136,11 @@ public class XboxScraper {
             }
         }
         gameInfo = new Juego(gameTitle, description, releaseDate, publisher, plataformas.toString(), priceFinal, rating);
+
+        Map<String, Object> mensaje = new HashMap<>();
+        mensaje.put("productor", "XboxScraper");
+        mensaje.put("juego", gameInfo.toString());
+        redisTemplate.opsForStream().add("UnificadorStream", mensaje);
 
         return CompletableFuture.completedFuture(gameInfo);
     }

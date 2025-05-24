@@ -3,8 +3,11 @@ FROM openjdk:25-jdk-slim
 
 # Instala dependencias necesarias
 RUN apt-get update && \
-    apt-get install -y wget unzip xvfb chromium chromium-driver && \
-    rm -rf /var/lib/apt/lists/*
+    apt-get install -y --no-install-recommends \
+        wget unzip xvfb chromium chromium-driver && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* && \
+    rm -rf /usr/share/doc /usr/share/man /usr/share/locale
 
 # Set the working directory in the container
 WORKDIR /app

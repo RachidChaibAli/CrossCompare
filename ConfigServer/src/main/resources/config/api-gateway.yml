@@ -15,27 +15,33 @@ spring:
     gateway:
         routes:
           - id: playstation-scraper
-            uri: lb://playstation-scraper
+            uri: lb://PLAYSTATION-SCRAPER
             predicates:
               - Path=/playstation-scraper/**
-              
+            filters:
+              - StripPrefix=1
           - id: xbox-scraper
-            uri: lb://xbox-scraper
+            uri: lb://XBOX-SCRAPER
             predicates:
               - Path=/xbox-scraper/**
-
+            filters:
+              - StripPrefix=1
           - id: steam-api
-            uri: lb://steam-api
+            uri: lb://STEAM-API
             predicates:
               - Path=/steam-api/**
-
+            filters:
+              - StripPrefix=1
           - id: user-manager
-            uri: lb://user-manager
+            uri: lb://USER-MANAGER
             predicates:
               - Path=/user-manager/**
-
+            filters:
+              - StripPrefix=1
           - id: unificador
-            uri: lb://unificador
+            uri: lb://UNIFICADOR
             predicates:
               - Path=/unificador/**
+            filters:
+              - StripPrefix=1
 

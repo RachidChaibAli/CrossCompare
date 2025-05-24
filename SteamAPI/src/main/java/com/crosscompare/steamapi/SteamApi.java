@@ -2,16 +2,21 @@ package com.crosscompare.steamapi;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
 public class SteamApi {
+
+    @Autowired
+    private RedisTemplate<String, Object> redisTemplate;
 
     @Autowired
     private RestClient restClient;
@@ -28,6 +33,14 @@ public class SteamApi {
 
         ArrayList<String> juegos = new ArrayList<>();
         idJuegos.forEach((id, juego) -> juegos.add(id + " - " + juego.toString()));
+
+        for (Juego juego : idJuegos.values()) {
+            Map<String, Object> mensaje = new HashMap<>();
+            mensaje.put("productor", "SteamApi");
+            mensaje.put("juego", juego.toString());
+            redisTemplate.opsForStream().add("UnificadorStream", mensaje);
+        }
+
         return juegos;
 
     }
