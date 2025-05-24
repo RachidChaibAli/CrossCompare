@@ -5,3 +5,6 @@ spring:
     config:
       import-check:
         enabled: false
+
+api:
+  key: API_KEY_TEST
