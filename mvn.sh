@@ -3,7 +3,7 @@
 # Script to execute ./mvnw clean package for all Spring services
 
 
-services=("PlaystationScraper" "SteamAPI" "UserManager" "APIGateway" "ConfigServer" "Eureka" "Unificador" "XboxScraper") 
+services=("PlaystationScraper" "SteamAPI" "Unificador" "XboxScraper") 
 
 for service in "${services[@]}"; do
     echo "Building $service..."

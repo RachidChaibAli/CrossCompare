@@ -5,11 +5,14 @@ import com.netflix.discovery.converters.Auto;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Map;
 
 @RestController
@@ -30,6 +33,9 @@ public class Controller {
     @Autowired
     private final BuscadorPrecio buscadorPrecio;
 
+    @Autowired
+    private RedisTemplate<String, Object> redisTemplate;
+
     public Controller(PlaystationScraperService playstationScraperService,
                       XboxScraperService xboxScraperService,
                       SteamApiService steamApiService, BuscadorPrecio buscadorPrecio) {
@@ -39,20 +45,22 @@ public class Controller {
         this.buscadorPrecio = buscadorPrecio;
     }
 
-    @GetMapping("/juegos")
-    public ArrayList<PreciosJuego> getJuegos(@RequestParam String busqueda) throws JsonProcessingException {
+    @PostMapping("/juegos")
+    public void postJuegos(@RequestParam String busqueda) {
         if(busqueda == null || busqueda.isEmpty()) {
-            return null;
+            return;
         }
-        playstationScraperService.buscarJuegosAsync(busqueda);
-        xboxScraperService.buscarJuegosAsync(busqueda);
-        steamApiService.buscarJuegosAsync(busqueda);
+        Map<String, Object> mensaje = new HashMap<>();
+        mensaje.put("busqueda", busqueda);
+        redisTemplate.opsForStream().add("BusquedaStream", mensaje);
+    }
 
-        unificador.unificarDatos(busqueda);
-
-        ArrayList<PreciosJuego> juegos = buscadorPrecio.obtenerPreciosPorBusqueda(busqueda);
-
-        return juegos;
+    @GetMapping("/juegos")
+    public ArrayList<PreciosJuego> getJuegos(@RequestParam String busqueda) {
+        if(busqueda == null || busqueda.isEmpty()) {
+            return new ArrayList<>();
+        }
+        return buscadorPrecio.obtenerPreciosPorBusqueda(busqueda);
     }
 
     @GetMapping("/error")

@@ -61,19 +61,6 @@ services:
       config-server:
         condition: service_healthy
 
-  user-manager:
-    build:
-      context: ./UserManager
-      dockerfile: Dockerfile
-    image: rachidchaibugr/user-manager
-    ports:
-      - "8084:8080"
-    depends_on:
-      eureka:
-        condition: service_healthy
-      config-server:
-        condition: service_healthy
-
   redis:
     image: redis:8.0.1-alpine
     container_name: redis

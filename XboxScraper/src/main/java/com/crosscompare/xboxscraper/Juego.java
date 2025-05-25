@@ -8,6 +8,7 @@ public record Juego(
         String plataforma,
         String precio,
         String valoracion,
-        String boxartUrl
+        String boxartUrl,
+        String busqueda
 ) {
 }

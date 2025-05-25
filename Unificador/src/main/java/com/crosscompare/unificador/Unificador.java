@@ -1,6 +1,6 @@
 package com.crosscompare.unificador;
 
-import com.crosscompare.unificador.jpa.Videojuego;
+import com.crosscompare.unificador.jpa.*;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.data.redis.connection.stream.Consumer;
@@ -23,17 +23,15 @@ import java.util.Map;
 public class Unificador {
 
     @Autowired
-    private RedisTemplate<String, Object> redisTemplate;
+    private VideojuegoService videojuegoService;
     @Autowired
-    private com.crosscompare.unificador.jpa.VideojuegoService videojuegoService;
+    private PlataformaService plataformaService;
     @Autowired
-    private com.crosscompare.unificador.jpa.PlataformaService plataformaService;
+    private PrecioService precioService;
     @Autowired
-    private com.crosscompare.unificador.jpa.PrecioService precioService;
+    private BusquedaService busquedaService;
     @Autowired
-    private com.crosscompare.unificador.jpa.BusquedaService busquedaService;
-    @Autowired
-    private com.crosscompare.unificador.jpa.PerteneceService perteneceService;
+    private PerteneceService perteneceService;
 
     /**
      * Intenta parsear una fecha en varios formatos comunes y la devuelve como LocalDate.
@@ -67,6 +65,23 @@ public class Unificador {
      */
     private JuegoFormateado unificarJuego(Juego juego) {
         // Parseo robusto de precio
+        BigDecimal precio = parsePrecio(juego);
+        // Parseo robusto de fecha
+        LocalDate fechaLanzamiento = parseFecha(juego.fechaLanzamiento());
+        return new JuegoFormateado(
+            juego.nombre(),
+            juego.descripcion(),
+            fechaLanzamiento,
+            juego.desarrollador(),
+            juego.plataforma(),
+            precio,
+            juego.valoracion(),
+            juego.boxartUrl(),
+            juego.busqueda()    
+        );
+    }
+
+    private BigDecimal parsePrecio(Juego juego) {
         BigDecimal precio = null;
         if (juego.precio() != null && !juego.precio().isBlank()) {
             String precioStr = juego.precio()
@@ -81,77 +96,35 @@ public class Unificador {
                 }
             }
         }
-        // Parseo robusto de fecha
-        LocalDate fechaLanzamiento = parseFecha(juego.fechaLanzamiento());
-        return new JuegoFormateado(
-            juego.nombre(),
-            juego.descripcion(),
-            fechaLanzamiento,
-            juego.desarrollador(),
-            juego.plataforma(),
-            precio,
-            juego.valoracion(),
-            juego.boxartUrl()
-        );
+        return precio;
     }
 
-    public ArrayList<Map<String, JuegoFormateado>> unificarDatos(String busqueda) throws JsonProcessingException {
-
-        ArrayList<Map<String, JuegoFormateado>> juegos = new ArrayList<>();
-
-        List<MapRecord<String, Object, Object>> mensajes = redisTemplate.opsForStream().read(
-                Consumer.from("UnificadorGrupo", "Consumidor1"),
-                StreamReadOptions.empty().count(10),
-                StreamOffset.create("UnificadorStream", ReadOffset.lastConsumed())
-        );
-
-        if (mensajes != null && !mensajes.isEmpty()) {
-            for (MapRecord<String, Object, Object> mensaje : mensajes) {
-                Map<Object, Object> valores = mensaje.getValue();
-
-                String nombreProductor = (String) valores.get("productor");
-
-                Object juegoObject = valores.get("juego");
-
-                // Instancia de ObjectMapper (puedes inyectarla con @Autowired si lo prefieres)
-                ObjectMapper mapper = new ObjectMapper();
-
-                // Si el objeto es String (JSON), deserializa con readValue
-                Juego juego;
-                if (juegoObject instanceof String json) {
-                    juego = mapper.readValue(json, Juego.class);
-                } else {
-                    juego = mapper.convertValue(juegoObject, Juego.class);
-                }
-
-                // Unificación genérica
-                JuegoFormateado formateado = unificarJuego(juego);
-
-                if( formateado.nombre() == null || formateado.nombre().isBlank() || formateado.plataforma() == null || formateado.plataforma().isBlank()) {
-                    continue; // Si el juego no tiene nombre o plataforma, lo ignoramos
-                }
-                if( formateado.precio() == null || formateado.precio().compareTo(BigDecimal.ZERO) < 0) {
-                    continue;
-                }
-
-                List<Videojuego> juegosCoincidentes = buscarJuegosCoincidentes(formateado);
-
-                if (juegosCoincidentes != null && !juegosCoincidentes.isEmpty()) {
-                    // Si el juego ya existe, agrega el precio
-                    agregarPrecioSiJuegoExiste(formateado, juegosCoincidentes);
-                } else {
-                    // Si no existe, crea el juego completo
-                    crearJuegoCompleto(formateado, busqueda);
-                }
-                // Aquí puedes guardar el formateado en la base de datos o continuar el flujo
-                // Por ejemplo: juegoFormateadoService.save(formateado);
-                Map<String, JuegoFormateado> formateadoMapa = new HashMap<>();
-                formateadoMapa.put(nombreProductor, formateado);
-                juegos.add(formateadoMapa);
-            }
+    // Nuevo método para unificar un solo mensaje
+    public void unificarMensaje(MapRecord<String, Object, Object> mensaje) throws JsonProcessingException {
+        Map<Object, Object> valores = mensaje.getValue();
+        Object juegoObject = valores.get("juego");
+        ObjectMapper mapper = new ObjectMapper();
+        Juego juego;
+        if (juegoObject instanceof String json) {
+            juego = mapper.readValue(json, Juego.class);
+        } else {
+            juego = mapper.convertValue(juegoObject, Juego.class);
         }
-
-        return juegos;
+        JuegoFormateado formateado = unificarJuego(juego);
+        if( formateado.nombre() == null || formateado.nombre().isBlank() || formateado.plataforma() == null || formateado.plataforma().isBlank()) {
+            return;
+        }
+        if( formateado.precio() == null || formateado.precio().compareTo(BigDecimal.ZERO) < 0) {
+            return;
+        }
+        List<Videojuego> juegosCoincidentes = buscarJuegosCoincidentes(formateado);
+        // Extraer el término de búsqueda del mensaje
+        String terminoBusqueda = formateado.busqueda();
+        if (juegosCoincidentes != null && !juegosCoincidentes.isEmpty()) {
+            agregarPrecioSiJuegoExiste(formateado, juegosCoincidentes);
+        } else {
+            crearJuegoCompleto(formateado, terminoBusqueda); // Ahora sí se guarda el término
+        }
     }
 
     /**
@@ -159,7 +132,7 @@ public class Unificador {
      */
     public void crearJuegoCompleto(JuegoFormateado formateado, String terminoBusqueda) {
         // Crear Videojuego
-        com.crosscompare.unificador.jpa.Videojuego vj = new com.crosscompare.unificador.jpa.Videojuego();
+        Videojuego vj = new Videojuego();
         vj.setNombre(formateado.nombre());
         vj.setFechalanzamiento(formateado.fechaLanzamiento());
         vj.setDesarrolladora(formateado.desarrollador());
@@ -167,30 +140,12 @@ public class Unificador {
         vj.setBoxartUrl(formateado.boxartUrl());
         vj = videojuegoService.save(vj);
         // Soporte para múltiples plataformas
-        String[] plataformas = formateado.plataforma().split(",");
-        for (String plataformaNombre : plataformas) {
-            String nombrePlataforma = plataformaNombre.trim();
-            if (nombrePlataforma.isBlank()) continue;
-            com.crosscompare.unificador.jpa.Plataforma plataforma = plataformaService.findOrCreateByNombre(nombrePlataforma, null);
-            // Crear relación Pertenece
-            com.crosscompare.unificador.jpa.PerteneceId perteneceId = new com.crosscompare.unificador.jpa.PerteneceId();
-            perteneceId.setIdvideojuego(vj.getId());
-            perteneceId.setIdplataforma(plataforma.getId());
-            if (perteneceService.findById(perteneceId).isEmpty()) {
-                com.crosscompare.unificador.jpa.Pertenece pertenece = new com.crosscompare.unificador.jpa.Pertenece();
-                pertenece.setId(perteneceId);
-                pertenece.setIdvideojuego(vj);
-                pertenece.setIdplataforma(plataforma);
-                perteneceService.save(pertenece);
-            }
-            // Crear Precio
-            crearPrecio(vj, plataforma, formateado.precio());
-        }
+        separarPlataformas(formateado, vj);
         // Crear Busqueda (solo una vez por juego)
-        com.crosscompare.unificador.jpa.BusquedaId busquedaId = new com.crosscompare.unificador.jpa.BusquedaId();
+        BusquedaId busquedaId = new BusquedaId();
         busquedaId.setIdvideojuego(vj.getId());
         busquedaId.setTermino(terminoBusqueda);
-        com.crosscompare.unificador.jpa.Busqueda busqueda = new com.crosscompare.unificador.jpa.Busqueda();
+        Busqueda busqueda = new Busqueda();
         busqueda.setId(busquedaId);
         busqueda.setFecha(Instant.now());
         busqueda.setIdvideojuego(vj); // Relación ManyToOne correctamente asignada
@@ -200,7 +155,7 @@ public class Unificador {
     /**
      * Devuelve una lista de videojuegos que coincidan por nombre, fecha y desarrollador (puede ser vacía).
      */
-    public List<com.crosscompare.unificador.jpa.Videojuego> buscarJuegosCoincidentes(JuegoFormateado formateado) {
+    public List<Videojuego> buscarJuegosCoincidentes(JuegoFormateado formateado) {
         return videojuegoService.buscarJuegosCoincidentes(formateado);
     }
 
@@ -208,9 +163,9 @@ public class Unificador {
      * Si existe el juego, revisa si existe la plataforma, si no la crea, y añade el precio.
      * Ahora recibe la lista de juegos coincidentes (no hace findAll).
      */
-    public void agregarPrecioSiJuegoExiste(JuegoFormateado formateado, List<com.crosscompare.unificador.jpa.Videojuego> juegosCoincidentes) {
+    public void agregarPrecioSiJuegoExiste(JuegoFormateado formateado, List<Videojuego> juegosCoincidentes) {
         if (juegosCoincidentes == null || juegosCoincidentes.isEmpty()) return;
-        com.crosscompare.unificador.jpa.Videojuego vj = juegosCoincidentes.getFirst(); // Si hay varios, toma el primero
+        Videojuego vj = juegosCoincidentes.getFirst(); // Si hay varios, toma el primero
         // Rellenar campos vacíos si es posible
         boolean modificado = false;
         if ((vj.getDescripcion() == null || vj.getDescripcion().isBlank()) && formateado.descripcion() != null && !formateado.descripcion().isBlank()) {
@@ -233,17 +188,21 @@ public class Unificador {
             videojuegoService.save(vj);
         }
         // Soporte para múltiples plataformas
+        separarPlataformas(formateado, vj);
+    }
+
+    private void separarPlataformas(JuegoFormateado formateado, Videojuego vj) {
         String[] plataformas = formateado.plataforma().split(",");
         for (String plataformaNombre : plataformas) {
             String nombrePlataforma = plataformaNombre.trim();
             if (nombrePlataforma.isBlank()) continue;
-            com.crosscompare.unificador.jpa.Plataforma plataforma = plataformaService.findOrCreateByNombre(nombrePlataforma, null);
+            Plataforma plataforma = plataformaService.findOrCreateByNombre(nombrePlataforma, null);
             // Crear relación Pertenece
-            com.crosscompare.unificador.jpa.PerteneceId perteneceId = new com.crosscompare.unificador.jpa.PerteneceId();
+            PerteneceId perteneceId = new PerteneceId();
             perteneceId.setIdvideojuego(vj.getId());
             perteneceId.setIdplataforma(plataforma.getId());
             if (perteneceService.findById(perteneceId).isEmpty()) {
-                com.crosscompare.unificador.jpa.Pertenece pertenece = new com.crosscompare.unificador.jpa.Pertenece();
+                Pertenece pertenece = new Pertenece();
                 pertenece.setId(perteneceId);
                 pertenece.setIdvideojuego(vj);
                 pertenece.setIdplataforma(plataforma);
@@ -254,9 +213,9 @@ public class Unificador {
         }
     }
 
-    private void crearPrecio(com.crosscompare.unificador.jpa.Videojuego vj, com.crosscompare.unificador.jpa.Plataforma plataforma, BigDecimal precioValor) {
-        com.crosscompare.unificador.jpa.Precio precio = new com.crosscompare.unificador.jpa.Precio();
-        com.crosscompare.unificador.jpa.PrecioId precioId = new com.crosscompare.unificador.jpa.PrecioId();
+    private void crearPrecio(Videojuego vj, Plataforma plataforma, BigDecimal precioValor) {
+        Precio precio = new Precio();
+        PrecioId precioId = new PrecioId();
         precioId.setIdvideojuego(vj.getId());
         precioId.setIdplataforma(plataforma.getId());
         precioId.setFecha(LocalDate.now());

@@ -59,8 +59,8 @@ public class PlaystationScraper {
             }
         }
         Elements elementsFinal = new Elements();
-        if(elementsFiltrados.size()>6){
-            for(int k=0; k<6; k++){
+        if(elementsFiltrados.size()>4){
+            for(int k=0; k<4; k++){
                 elementsFinal.add(elementsFiltrados.get(k));
             }
         }else {
@@ -73,7 +73,7 @@ public class PlaystationScraper {
             Element img = e.selectFirst("img[data-qa~=search#productTile\\d+#game-art#image#image]");
             String boxArtUrl = img != null ? img.attr("src") : "";
             String href = "https://store.playstation.com/" + e.select("a").attr("href");
-            scrapePlaystation(href, boxArtUrl); // Llamada asíncrona, no espera resultado
+            scrapePlaystation(href, boxArtUrl, juego); // Pasar término de búsqueda
         }
 
 
@@ -81,8 +81,8 @@ public class PlaystationScraper {
     }
 
 
-    @Async
-    public void scrapePlaystation(String url, String boxArtUrl) throws IOException {
+    //@Async
+    public void scrapePlaystation(String url, String boxArtUrl, String busqueda) throws IOException {
 
         Juego gameInfo = null;
 
@@ -107,11 +107,10 @@ public class PlaystationScraper {
             }
             String rating = doc.select("span[data-qa=mfe-star-rating#overall-rating#average-rating]").text();
 
-            gameInfo = new Juego(gameTitle, description, releaseDate, publisher, platforms, priceFinal, rating, boxArtUrl);
-
-
+            gameInfo = new Juego(gameTitle, description, releaseDate, publisher, platforms, priceFinal, rating, boxArtUrl, busqueda);
             Map<String, Object> mensaje = new HashMap<>();
             mensaje.put("productor", "PlaystationScraper");
+            mensaje.put("busqueda", busqueda); // Añadir término de búsqueda
             try {
                 ObjectMapper mapper = new ObjectMapper();
                 mensaje.put("juego", mapper.writeValueAsString(gameInfo));

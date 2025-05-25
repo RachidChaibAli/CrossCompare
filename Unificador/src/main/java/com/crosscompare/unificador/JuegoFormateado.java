@@ -11,5 +11,6 @@ public record JuegoFormateado(
     String plataforma,
     BigDecimal precio,
     String valoracion,
-    String boxartUrl
+    String boxartUrl,
+    String busqueda
 ) {}

@@ -25,7 +25,7 @@ public class SteamApi {
     @Value("${api.key}")
     private String apiKey;
 
-    public ArrayList<String> consumirApi(String nombreJuego) {
+    public void consumirApi(String nombreJuego) {
         Map<String, Juego> idJuegos = buscarIdsPorNombre(nombreJuego);
 
         idJuegos = buscarJuegoPorId(idJuegos);
@@ -46,8 +46,6 @@ public class SteamApi {
             }
             redisTemplate.opsForStream().add("UnificadorStream", mensaje);
         }
-
-        return juegos;
 
     }
 
@@ -77,7 +75,8 @@ public class SteamApi {
                                     "", // plataforma
                                     "", // precio
                                     "", // valoracion
-                                    r.assets() != null ? r.assets().boxart() : null // boxartUrl
+                                    r.assets() != null ? r.assets().boxart() : null, // boxartUrl
+                                    nombreJuego // busqueda original
                             )
                     ));
         } else {
@@ -107,7 +106,8 @@ public class SteamApi {
                     "PC", // plataforma fija o puedes adaptarla si hay campo
                     juegoViejo.precio(), // se mantiene el precio original (vacío)
                     "",
-                    juegoViejo.boxartUrl()
+                    juegoViejo.boxartUrl(),
+                    juegoViejo.busqueda()
                 );
                 juegosMap.put(id, juegoNuevo);
             }
@@ -146,7 +146,8 @@ public class SteamApi {
                                 juegoViejo.plataforma(),
                                 precio,
                                 juegoViejo.valoracion(),
-                                juegoViejo.boxartUrl()
+                                juegoViejo.boxartUrl(),
+                                juegoViejo.busqueda()
                             );
                             juegosMap.put(id, juegoNuevo);
                         }

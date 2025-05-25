@@ -68,15 +68,15 @@ public class XboxScraper {
                 Element img = e.selectFirst("img.WrappedResponsiveImage-module__image___QvkuN.ProductCard-module__boxArt___-2vQY");
                 String boxArtUrl = img != null ? img.attr("src") : "";
                 String href = e.select("a").attr("href");
-                scrapeXbox(href, boxArtUrl); // Llamada asíncrona, no se espera resultado
+                scrapeXbox(href, boxArtUrl, juego); // Llamada asíncrona, no se espera resultado
             }
         }
         // Ya no se espera a los resultados ni se agregan a la lista
         return ;
     }
 
-    @Async
-    public void scrapeXbox(String url, String boxArtUrl) throws Exception {
+    //@Async
+    public void scrapeXbox(String url, String boxArtUrl, String busqueda) throws Exception {
         Juego gameInfo = null;
         driver.get(url);
         WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(10));
@@ -128,7 +128,7 @@ public class XboxScraper {
                 rating = matcher.group();
             }
         }
-        gameInfo = new Juego(gameTitle, description, releaseDate, publisher, plataformas.toString(), priceFinal, rating, boxArtUrl);
+        gameInfo = new Juego(gameTitle, description, releaseDate, publisher, plataformas.toString(), priceFinal, rating, boxArtUrl, busqueda);
 
         Map<String, Object> mensaje = new HashMap<>();
         mensaje.put("productor", "XboxScraper");
