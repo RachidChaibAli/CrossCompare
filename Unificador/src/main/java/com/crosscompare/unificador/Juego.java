@@ -1,4 +1,4 @@
-package com.crosscompare.xboxscraper;
+package com.crosscompare.unificador;
 
 public record Juego(
         String nombre,

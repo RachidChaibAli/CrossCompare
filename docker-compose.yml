@@ -79,9 +79,13 @@ services:
     container_name: redis
     ports:
       - "6379:6379"
+    restart: unless-stopped
+    entrypoint: ["/init/redis-init.sh"]
+    environment:
+      - REDIS_REPLICATION_MODE=master
     volumes:
       - redis_data:/data
-    restart: unless-stopped
+      - ./redis-init.sh:/init/redis-init.sh:ro
 
   config-server:
     build:
@@ -141,6 +145,18 @@ services:
       interval: 10s
       timeout: 5s
       retries: 10
+
+  phpmyadmin:
+    image: phpmyadmin:5.2.1
+    container_name: phpmyadmin
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    environment:
+      - PMA_HOST=unificador-db
+      - PMA_PORT=3306
+    depends_on:
+      - unificador-db
 
 volumes:
   redis_data:

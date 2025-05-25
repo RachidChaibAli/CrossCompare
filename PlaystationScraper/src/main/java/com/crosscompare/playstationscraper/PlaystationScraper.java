@@ -1,5 +1,6 @@
 package com.crosscompare.playstationscraper;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -19,12 +20,9 @@ import java.io.IOException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
 
 @Service
 public class PlaystationScraper {
@@ -32,7 +30,7 @@ public class PlaystationScraper {
     @Autowired
     private RedisTemplate<String, Object> redisTemplate;
 
-    private WebDriver driver;
+    private final WebDriver driver;
 
     public PlaystationScraper() {
         ChromeOptions options = new ChromeOptions();
@@ -42,13 +40,11 @@ public class PlaystationScraper {
         this.driver = new ChromeDriver(options);
     }
 
-    public String scrape(String juego) throws IOException, ExecutionException, InterruptedException {
+    public void scrape(String juego) throws IOException {
         String encodedSearchTerm = URLEncoder.encode(juego, StandardCharsets.UTF_8);
         String url = "https://store.playstation.com/es-es/search/" + encodedSearchTerm;
 
-
         driver.get(url);
-
         WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(10));
         wait.until(ExpectedConditions.presenceOfElementLocated(By.cssSelector(".psw-fill-x.psw-t-truncate-1.psw-l-space-x-2")));
 
@@ -71,39 +67,22 @@ public class PlaystationScraper {
             elementsFinal = elementsFiltrados;
         }
 
-        ArrayList<Juego> juegos = new ArrayList<>();
-        ArrayList<CompletableFuture<Juego>> futures = new ArrayList<>();
-
-        long start = System.nanoTime();
 
 
         for (Element e : elementsFinal) {
+            Element img = e.selectFirst("img[data-qa~=search#productTile\\d+#game-art#image#image]");
+            String boxArtUrl = img != null ? img.attr("src") : "";
             String href = "https://store.playstation.com/" + e.select("a").attr("href");
-            futures.add(scrapePlaystation(href));
+            scrapePlaystation(href, boxArtUrl); // Llamada asíncrona, no espera resultado
         }
 
-        // Espera a que terminen todos los futuros
-        CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
 
-        for (CompletableFuture<Juego> future : futures) {
-            Juego juegoCompleto = future.get();
-            if (juegoCompleto != null) {
-                juegos.add(juegoCompleto);
-            } else {
-                System.out.println("Error: No se ha encontrado la información del juego");
-            }
-        }
 
-        long end = System.nanoTime();
-        double durationSeconds = (end - start) / 1_000_000_000.0;
-
-        juegos.add(new Juego("Tiempo de scraping", "", durationSeconds + " s", "", "", "", ""));
-        return juegos.toString();
     }
 
 
     @Async
-    public CompletableFuture<Juego> scrapePlaystation(String url) {
+    public void scrapePlaystation(String url, String boxArtUrl) throws IOException {
 
         Juego gameInfo = null;
 
@@ -118,22 +97,27 @@ public class PlaystationScraper {
         Element dlJuego = doc.select("dl[data-qa=gameInfo#releaseInformation]").first();
         if (divJuego != null && dlJuego != null) {
             String gameTitle = divJuego.select("h1[data-qa=mfe-game-title#name]").text();
-            String publisher = dlJuego.select("dd[data-qa=gameInfo#releaseInformation#publisher-value]").text();
-            String releaseDate = dlJuego.select("dd[data-qa=gameInfo#releaseInformation#releaseDate-value]").text();
             String description = doc.select("p[data-qa=mfe-game-overview#description]").text();
+            String releaseDate = dlJuego.select("dd[data-qa=gameInfo#releaseInformation#releaseDate-value]").text();
+            String publisher = dlJuego.select("dd[data-qa=gameInfo#releaseInformation#publisher-value]").text();
+            String platforms = dlJuego.select("dd[data-qa=gameInfo#releaseInformation#platform-value]").text();
             String priceFinal = divJuego.select("span[data-qa=mfeCtaMain#offer0#finalPrice]").text();
             if(priceFinal.isEmpty()){
                 priceFinal = divJuego.select("span[data-qa=mfeCtaMain#offer0#originalPrice]").text();
             }
-            String platforms = dlJuego.select("dd[data-qa=gameInfo#releaseInformation#platform-value]").text();
             String rating = doc.select("span[data-qa=mfe-star-rating#overall-rating#average-rating]").text();
 
-            gameInfo = new Juego(gameTitle, platforms, priceFinal, publisher, releaseDate, description, rating);
+            gameInfo = new Juego(gameTitle, description, releaseDate, publisher, platforms, priceFinal, rating, boxArtUrl);
 
 
             Map<String, Object> mensaje = new HashMap<>();
             mensaje.put("productor", "PlaystationScraper");
-            mensaje.put("juego", gameInfo.toString());
+            try {
+                ObjectMapper mapper = new ObjectMapper();
+                mensaje.put("juego", mapper.writeValueAsString(gameInfo));
+            } catch (Exception e) {
+                mensaje.put("juego", "{}");
+            }
             redisTemplate.opsForStream().add("UnificadorStream", mensaje);
         } else {
             System.out.println("Error: No se ha encontrado la información del juego");
@@ -141,7 +125,6 @@ public class PlaystationScraper {
 
 
 
-        return CompletableFuture.completedFuture(gameInfo);
     }
 
 

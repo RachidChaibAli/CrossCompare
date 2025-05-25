@@ -1,5 +1,6 @@
 package com.crosscompare.steamapi;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -37,7 +38,12 @@ public class SteamApi {
         for (Juego juego : idJuegos.values()) {
             Map<String, Object> mensaje = new HashMap<>();
             mensaje.put("productor", "SteamApi");
-            mensaje.put("juego", juego.toString());
+            try {
+                ObjectMapper mapper = new ObjectMapper();
+                mensaje.put("juego", mapper.writeValueAsString(juego));
+            } catch (Exception e) {
+                mensaje.put("juego", "{}");
+            }
             redisTemplate.opsForStream().add("UnificadorStream", mensaje);
         }
 
@@ -63,7 +69,16 @@ public class SteamApi {
             return response.stream()
                     .collect(Collectors.toMap(
                             GameSearchResult::id,
-                            r -> new Juego(r.title(), "", "", "", "", "", "")
+                            r -> new Juego(
+                                    r.title(),
+                                    "", // descripcion
+                                    "", // fechaLanzamiento
+                                    "", // desarrollador
+                                    "", // plataforma
+                                    "", // precio
+                                    "", // valoracion
+                                    r.assets() != null ? r.assets().boxart() : null // boxartUrl
+                            )
                     ));
         } else {
             return Map.of();
@@ -82,7 +97,7 @@ public class SteamApi {
                 .retrieve()
                 .body(GameInfoResult.class);
             if (detalle != null) {
-                String desarrollador = detalle.developers() != null && !detalle.developers().isEmpty() ? detalle.developers().getFirst().name() : "";
+                String desarrollador = detalle.publishers() != null && !detalle.publishers().isEmpty() ? detalle.publishers().getFirst().name() : "";
                 Juego juegoViejo = juegosMap.get(id);
                 Juego juegoNuevo = new Juego(
                     detalle.title() != null ? detalle.title() : juegoViejo.nombre(),
@@ -91,7 +106,8 @@ public class SteamApi {
                     !desarrollador.isEmpty() ? desarrollador : juegoViejo.desarrollador(),
                     "PC", // plataforma fija o puedes adaptarla si hay campo
                     juegoViejo.precio(), // se mantiene el precio original (vacío)
-                    ""
+                    "",
+                    juegoViejo.boxartUrl()
                 );
                 juegosMap.put(id, juegoNuevo);
             }
@@ -129,7 +145,8 @@ public class SteamApi {
                                 juegoViejo.desarrollador(),
                                 juegoViejo.plataforma(),
                                 precio,
-                                juegoViejo.valoracion()
+                                juegoViejo.valoracion(),
+                                juegoViejo.boxartUrl()
                             );
                             juegosMap.put(id, juegoNuevo);
                         }

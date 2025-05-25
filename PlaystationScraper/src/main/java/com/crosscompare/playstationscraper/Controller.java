@@ -2,6 +2,8 @@ package com.crosscompare.playstationscraper;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.io.IOException;
@@ -20,8 +22,12 @@ public class Controller {
         return "Resultados desde el microservicio playstation-scraper";
     }
 
-    @GetMapping("/juegos")
-    public String juegos() throws IOException, ExecutionException, InterruptedException {
-        return playstationScraper.scrape("call");
+    @PostMapping("/juegos")
+    public void juegos(@RequestParam String busqueda) throws IOException {
+        if(busqueda != null && !busqueda.isEmpty()) {
+            playstationScraper.scrape(busqueda);
+        }
     }
+
+
 }

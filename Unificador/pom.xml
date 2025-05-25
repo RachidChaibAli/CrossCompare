@@ -11,8 +11,8 @@
 	<groupId>com.crosscompare</groupId>
 	<artifactId>Unificador</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
-	<name>API-Gateway</name>
-	<description>API-Gateway</description>
+	<name>Unificador</name>
+	<description>Unificador</description>
 	<url/>
 	<licenses>
 		<license/>
@@ -58,11 +58,6 @@
 			<optional>true</optional>
 		</dependency>
 		<dependency>
-			<groupId>com.h2database</groupId>
-			<artifactId>h2</artifactId>
-			<scope>runtime</scope>
-		</dependency>
-		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-test</artifactId>
 			<scope>test</scope>
@@ -78,6 +73,14 @@
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-data-redis</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>jakarta.validation</groupId>
+			<artifactId>jakarta.validation-api</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.mariadb.jdbc</groupId>
+			<artifactId>mariadb-java-client</artifactId>
 		</dependency>
 	</dependencies>
 

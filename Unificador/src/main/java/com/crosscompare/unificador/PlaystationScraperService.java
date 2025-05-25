@@ -3,6 +3,7 @@ package com.crosscompare.unificador;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cloud.client.loadbalancer.LoadBalanced;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 
@@ -14,15 +15,22 @@ public class PlaystationScraperService {
     @Autowired
     public PlaystationScraperService(@LoadBalanced RestClient.Builder restClientBuilder) {
         this.restClient = restClientBuilder
-                .baseUrl("http://playstation-scraper") // Nombre del servicio en Eureka
+                .baseUrl("lb://playstation-scraper") // Nombre del servicio en Eureka
                 .build();
     }
 
-    public String buscarJuegos() {
-        return restClient.get()
-                .uri("/hola") // Ruta relativa en el microservicio
-                .retrieve()
-                .body(String.class);
+    @Async
+    public void buscarJuegosAsync(String busqueda) {
+        try {
+            restClient.post()
+                    .uri(uriBuilder -> uriBuilder
+                            .path("/juegos")
+                            .queryParam("busqueda", busqueda)
+                            .build())
+                    .retrieve();
+        } catch (Exception e) {
+            System.err.println("Error disparando PlaystationScraper: " + e.getMessage());
+        }
     }
 }
 

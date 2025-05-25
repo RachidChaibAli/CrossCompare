@@ -11,6 +11,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -36,7 +37,7 @@ public class XboxScraper {
     @Autowired
     private RedisTemplate<String, Object> redisTemplate;
 
-    private WebDriver driver;
+    private final WebDriver driver;
 
     public XboxScraper() {
         ChromeOptions options = new ChromeOptions();
@@ -46,7 +47,7 @@ public class XboxScraper {
         this.driver = new ChromeDriver(options);
     }
 
-    public ArrayList<Juego> scrape(String juego) throws Exception {
+    public void scrape(String juego) throws Exception {
         String juegoUTF8 = URLEncoder.encode(juego, StandardCharsets.UTF_8);
         String url = "https://www.xbox.com/es-ES/Search/Results?q=" + juegoUTF8;
 
@@ -57,8 +58,6 @@ public class XboxScraper {
 
         Document doc = Jsoup.parse(Objects.requireNonNull(driver.getPageSource()));
         Element ol = doc.getElementsByClass("SearchProductGrid-module__container___jew-i").first();
-        ArrayList<Juego> juegos = new ArrayList<>();
-        ArrayList<CompletableFuture<Juego>> futures = new ArrayList<>();
         if (ol != null) {
             Elements elementsAll = ol.select("li");
             Elements elements = new Elements();
@@ -66,24 +65,18 @@ public class XboxScraper {
                 elements.add(elementsAll.get(i));
             }
             for (Element e : elements) {
+                Element img = e.selectFirst("img.WrappedResponsiveImage-module__image___QvkuN.ProductCard-module__boxArt___-2vQY");
+                String boxArtUrl = img != null ? img.attr("src") : "";
                 String href = e.select("a").attr("href");
-                futures.add(scrapeXbox(href));
+                scrapeXbox(href, boxArtUrl); // Llamada asíncrona, no se espera resultado
             }
         }
-        CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
-        for (CompletableFuture<Juego> future : futures) {
-            Juego gameInfo = future.get();
-            if (gameInfo != null) {
-                juegos.add(gameInfo);
-            } else {
-                System.out.println("Error: No se ha encontrado la información del juego");
-            }
-        }
-        return juegos;
+        // Ya no se espera a los resultados ni se agregan a la lista
+        return ;
     }
 
     @Async
-    public CompletableFuture<Juego> scrapeXbox(String url) {
+    public void scrapeXbox(String url, String boxArtUrl) throws Exception {
         Juego gameInfo = null;
         driver.get(url);
         WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(10));
@@ -135,13 +128,16 @@ public class XboxScraper {
                 rating = matcher.group();
             }
         }
-        gameInfo = new Juego(gameTitle, description, releaseDate, publisher, plataformas.toString(), priceFinal, rating);
+        gameInfo = new Juego(gameTitle, description, releaseDate, publisher, plataformas.toString(), priceFinal, rating, boxArtUrl);
 
         Map<String, Object> mensaje = new HashMap<>();
         mensaje.put("productor", "XboxScraper");
-        mensaje.put("juego", gameInfo.toString());
+        try {
+            ObjectMapper mapper = new ObjectMapper();
+            mensaje.put("juego", mapper.writeValueAsString(gameInfo));
+        } catch (Exception e) {
+            mensaje.put("juego", "{}");
+        }
         redisTemplate.opsForStream().add("UnificadorStream", mensaje);
-
-        return CompletableFuture.completedFuture(gameInfo);
     }
 }
