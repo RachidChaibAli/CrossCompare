@@ -7,7 +7,7 @@ WORKDIR /app
 # Instala dependencias necesarias
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
-        wget unzip xvfb chromium chromium-driver && \
+        wget unzip xvfb chromium chromium-driver curl && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* && \
     rm -rf /usr/share/doc /usr/share/man /usr/share/locale
