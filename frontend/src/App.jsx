@@ -81,14 +81,11 @@ function App() {
   }, [busqueda]); // El efecto se re-ejecuta si el término de búsqueda cambia
 
   return (
-    <div className="container-fluid mt-5" style={{ minHeight: '100vh' }}> {/* container-fluid para ancho completo y minHeight para altura */}
-      {/* Título de la aplicación */}
+    <div className="container-fluid mt-5" style={{ minHeight: '100vh' }}>
       <h1 className="text-center mb-4 mt-4 text-primary">CrossCompare</h1>
-
-      {/* Formulario de búsqueda centrado horizontalmente y arriba */}
       <div className="row justify-content-center mb-4">
-        <div className="col-12 col-md-8 col-lg-6 d-flex justify-content-center"> {/* Añadido d-flex justify-content-center para centrar el input si es más pequeño que la columna */}
-          <form className="d-flex justify-content-center w-100" onSubmit={handleBuscar}> {/* w-100 para que el formulario ocupe el 100% de su columna */}
+        <div className="col-12 col-md-8 col-lg-6 d-flex justify-content-center">
+          <form className="d-flex justify-content-center w-100" onSubmit={handleBuscar}>
             <input
               className="form-control me-2 rounded-pill shadow-sm"
               type="search"
@@ -96,12 +93,12 @@ function App() {
               value={busqueda}
               onChange={e => setBusqueda(e.target.value)}
               aria-label="Buscar juego"
-              style={{ width: '100%', minWidth: '250px', maxWidth: '400px' }} // Ancho del 100% de su padre con un mínimo y un máximo
+              style={{ width: '100%', minWidth: '250px', maxWidth: '400px' }}
             />
             <button
               className="btn btn-primary rounded-pill shadow-sm"
               type="submit"
-              disabled={cargando || !busqueda.trim()} // Deshabilita el botón si está cargando o la búsqueda está vacía
+              disabled={cargando || !busqueda.trim()}
             >
               {cargando ? (
                 <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
