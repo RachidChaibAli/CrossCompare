@@ -10,8 +10,5 @@ COPY target/*.jar app.jar
 # Expone el puerto por defecto de Spring Boot (ajusta si usas otro)
 EXPOSE 8080
 
-# Instala curl para el healthcheck
-RUN apt-get update && apt-get install -y curl
-
 # Comando para ejecutar la aplicación
 ENTRYPOINT ["java", "-jar", "/app/app.jar"]

@@ -1,1 +1,20 @@
 jpa/
+.env
+unificador-db-secrets.env
+
+# Java
+target/
+*.log
+
+# Node
+node_modules/
+dist/
+
+# Entornos y secretos
+.env
+unificador-db-secrets.env
+
+# Otros
+*.iml
+.idea/
+.vscode/

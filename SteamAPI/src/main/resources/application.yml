@@ -15,4 +15,4 @@ spring:
         port: 6379
 
 api:
-  key: a735e682f615ce8cca4e057cb8a0b526412bde6b
+  key: ${STEAM_API_KEY}
