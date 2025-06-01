@@ -83,3 +83,6 @@ availableSecrets:
       env: 'DOCKERFILE_USERNAME'
     - versionName: secrets/_DOCKERFILE_PASSWORD/versions/latest
       env: 'DOCKERFILE_PASSWORD'
+
+options:
+  logging: CLOUD_LOGGING_ONLY
