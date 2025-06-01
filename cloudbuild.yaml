@@ -1,6 +1,6 @@
 steps:
   # 1. Dar permisos de ejecución y compilar todos los servicios Java usando el script personalizado
-  - name: "maven:3.9.6-eclipse-temurin-21"
+  - name: "maven:3.9.7-eclipse-temurin-24"
     id: "chmod-and-compilar-java"
     entrypoint: "bash"
     args:
