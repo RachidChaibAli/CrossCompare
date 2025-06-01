@@ -11,23 +11,23 @@ steps:
         find . -name mvnw -exec chmod +x {} \;
         ./mvn.sh
 
-  # 2. Recuperar el secreto ENV y crear el archivo .env para el frontend
+  # 2. Recuperar el secreto _ENV y crear el archivo .env para el frontend
   - name: "gcr.io/google.com/cloudsdktool/cloud-sdk"
     id: "crear-env-frontend"
     entrypoint: "bash"
     args:
       - "-c"
       - |
-        gcloud secrets versions access latest --secret=ENV > .env
+        gcloud secrets versions access latest --secret=_ENV > .env
 
-  # 3. Recuperar el secreto UNIFICADOR_ENV y crear el archivo unificador-db-secrets.env
+  # 3. Recuperar el secreto _UNIFICADOR_ENV y crear el archivo unificador-db-secrets.env
   - name: "gcr.io/google.com/cloudsdktool/cloud-sdk"
     id: "crear-env-unificador"
     entrypoint: "bash"
     args:
       - "-c"
       - |
-        gcloud secrets versions access latest --secret=UNIFICADOR_ENV > unificador-db-secrets.env
+        gcloud secrets versions access latest --secret=_UNIFICADOR_ENV > unificador-db-secrets.env
 
   # 4. Renombrar .env.example a .env antes del build de Docker Compose
   - name: "gcr.io/google.com/cloudsdktool/cloud-sdk"
