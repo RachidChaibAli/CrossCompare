@@ -41,7 +41,7 @@ steps:
   # 5. Construir las imágenes Docker de todos los servicios definidos en docker-compose
   - name: "docker/compose:1.29.2"
     id: "build-docker"
-    entrypoint: "bash"
+    entrypoint: "sh"
     args:
       - "-c"
       - |
@@ -50,7 +50,7 @@ steps:
   # 6. Login en Docker Hub usando los secretos de usuario y contraseña
   - name: "docker/compose:1.29.2"
     id: "docker-login"
-    entrypoint: "bash"
+    entrypoint: "sh"
     args:
       - "-c"
       - |
@@ -60,7 +60,7 @@ steps:
   # 7. Pushear las imágenes al registro
   - name: "docker/compose:1.29.2"
     id: "push-docker"
-    entrypoint: "bash"
+    entrypoint: "sh"
     args:
       - "-c"
       - |
