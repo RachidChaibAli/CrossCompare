@@ -3,7 +3,7 @@ services:
     build:
       context: ./ApiGateway
       dockerfile: Dockerfile
-    image: rachidchaibugr/api-gateway
+    image: rachidchaibali/crosscompare:api-gateway
     ports:
       - "8080:8080"
     depends_on:
@@ -16,9 +16,9 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
-    image: rachidchaibugr/frontend
+    image: rachidchaibali/crosscompare:frontend
     ports:
-      - "3000:80"
+      - "80:80"
     depends_on:
       - api-gateway
       - playstation-scraper
@@ -30,7 +30,7 @@ services:
     build:
       context: ./PlaystationScraper
       dockerfile: Dockerfile
-    image: rachidchaibugr/playstation-scraper
+    image: rachidchaibali/crosscompare:playstation-scraper
     ports:
       - "8081:8080"
     depends_on:
@@ -44,7 +44,7 @@ services:
     build:
       context: ./XboxScraper
       dockerfile: Dockerfile
-    image: rachidchaibugr/xbox-scraper
+    image: rachidchaibali/crosscompare:xbox-scraper
     ports:
       - "8082:8080"
     depends_on:
@@ -58,7 +58,7 @@ services:
     build:
       context: ./SteamAPI
       dockerfile: Dockerfile
-    image: rachidchaibugr/steam-api
+    image: rachidchaibali/crosscompare:steam-api
     ports:
       - "8083:8080"
     environment:
@@ -87,7 +87,7 @@ services:
     build:
       context: ./ConfigServer
       dockerfile: Dockerfile
-    image: rachidchaibugr/config-server
+    image: rachidchaibali/crosscompare:config-server
     ports:
       - "8088:8088"
     depends_on:
@@ -103,7 +103,7 @@ services:
     build:
       context: ./Eureka
       dockerfile: Dockerfile
-    image: rachidchaibugr/eureka
+    image: rachidchaibali/crosscompare:eureka
     ports:
       - "8761:8761"
     healthcheck:
@@ -116,7 +116,7 @@ services:
     build:
       context: ./Unificador
       dockerfile: Dockerfile
-    image: rachidchaibugr/unificador
+    image: rachidchaibali/crosscompare:unificador
     ports:
       - "8085:8080"
     depends_on:
@@ -139,17 +139,17 @@ services:
       - ./db-unificador-init.sql:/docker-entrypoint-initdb.d/db-unificador-init.sql:ro
    
 
-  phpmyadmin:
-    image: phpmyadmin:5.2.1
-    container_name: phpmyadmin
-    restart: unless-stopped
-    ports:
-      - "80:80"
-    environment:
-      - PMA_HOST=unificador-db
-      - PMA_PORT=3306
-    depends_on:
-      - unificador-db
+  # phpmyadmin:
+  #   image: phpmyadmin:5.2.1
+  #   container_name: phpmyadmin
+  #   restart: unless-stopped
+  #   ports:
+  #     - "80:80"
+  #   environment:
+  #     - PMA_HOST=unificador-db
+  #     - PMA_PORT=3306
+  #   depends_on:
+  #     - unificador-db
 
 volumes:
   redis_data:

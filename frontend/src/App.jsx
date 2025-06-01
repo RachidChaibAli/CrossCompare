@@ -1,7 +1,9 @@
 import axios from 'axios';
 // Se ha restaurado la importación de Bootstrap CSS.
 import 'bootstrap/dist/css/bootstrap.min.css';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
+
+const API_URL = import.meta.env.VITE_API_URL;
 
 function App() {
   // Estado para el término de búsqueda ingresado por el usuario
@@ -14,6 +16,12 @@ function App() {
   const [error, setError] = useState(null);
   // Estado para controlar si se ha realizado una búsqueda (para mostrar el mensaje de no resultados)
   const [busquedaRealizada, setBusquedaRealizada] = useState(false);
+  // Estado para contar los intentos de polling sin resultados
+  const [intentosSinResultados, setIntentosSinResultados] = useState(0);
+  // Estado para controlar el estado del polling
+  const [pollingActivo, setPollingActivo] = useState(false);
+  // Referencia para almacenar el ID del intervalo de polling
+  const pollingRef = useRef(null);
 
 
   /**
@@ -23,11 +31,17 @@ function App() {
    */
   const fetchResults = async (searchTerm) => {
     try {
-      const res = await axios.get('http://localhost:8080/unificador/juegos', {
+      const res = await axios.get(`${API_URL}/unificador/juegos`, {
         params: { busqueda: searchTerm }
       });
       setResultados(res.data);
       setError(null); // Limpia cualquier error anterior si la petición fue exitosa
+      // Reinicia el contador si hay resultados
+      if (res.data && res.data.length > 0) {
+        setIntentosSinResultados(0);
+      } else {
+        setIntentosSinResultados((prev) => prev + 1);
+      }
     } catch (err) {
       setError('Error al obtener resultados. Inténtalo de nuevo más tarde.');
       console.error('Error al obtener resultados:', err);
@@ -45,14 +59,23 @@ function App() {
     setResultados([]); // Limpia los resultados anteriores
     setError(null); // Limpia cualquier error anterior
     setBusquedaRealizada(true); // Marca que se ha realizado una búsqueda
+    setIntentosSinResultados(0); // Reinicia el contador de intentos sin resultados
+    setPollingActivo(false); // Detenemos cualquier polling anterior
+
+    // Limpia el intervalo de polling anterior si existe
+    if (pollingRef.current) {
+      clearInterval(pollingRef.current);
+      pollingRef.current = null;
+    }
 
     try {
       // Realiza la solicitud POST inicial para lanzar la búsqueda en el backend
-      await axios.post('http://localhost:8080/unificador/juegos', null, {
+      await axios.post(`${API_URL}/unificador/juegos`, null, {
         params: { busqueda } // Pasa el término de búsqueda como parámetro
       });
       // Después de la petición POST, se realiza una primera obtención de resultados
       await fetchResults(busqueda);
+      setPollingActivo(true); // Activamos el polling tras la primera búsqueda
     } catch (err) {
       setError('Error al iniciar la búsqueda. Asegúrate de que el servidor está funcionando.');
       console.error('Error al iniciar la búsqueda:', err);
@@ -63,22 +86,22 @@ function App() {
 
   // useEffect para el polling continuo de resultados
   useEffect(() => {
-    // Realiza una primera obtención de resultados cuando el componente se monta o la búsqueda cambia
-    fetchResults(busqueda);
+    if (pollingActivo) {
+      // Configura el intervalo para obtener resultados cada 4 segundos
+      pollingRef.current = setInterval(() => {
+        fetchResults(busqueda);
+      }, 4000); // Polling cada 4 segundos
 
-    // Configura el intervalo para obtener resultados cada 4 segundos
-    const intervalId = setInterval(() => {
-      fetchResults(busqueda);
-    }, 4000); // Polling cada 4 segundos
-
-    // Función de limpieza para detener el intervalo cuando el componente se desmonta
-    // o cuando 'busqueda' cambia y se re-ejecuta este efecto
-    return () => {
-      if (intervalId) {
-        clearInterval(intervalId); // Asegura que el intervalo se detenga para evitar fugas de memoria
-      }
-    };
-  }, [busqueda]); // El efecto se re-ejecuta si el término de búsqueda cambia
+      // Función de limpieza para detener el intervalo cuando el componente se desmonta
+      // o cuando 'busqueda' cambia y se re-ejecuta este efecto
+      return () => {
+        if (pollingRef.current) {
+          clearInterval(pollingRef.current); // Asegura que el intervalo se detenga para evitar fugas de memoria
+          pollingRef.current = null;
+        }
+      };
+    }
+  }, [pollingActivo, busqueda]); // El efecto se re-ejecuta si el término de búsqueda cambia
 
   return (
     <div className="container-fluid mt-5" style={{ minHeight: '100vh' }}>
@@ -127,8 +150,15 @@ function App() {
         </div>
       )}
 
+      {/* Mensaje de polling: esperando resultados */}
+      {!cargando && resultados.length === 0 && busquedaRealizada && intentosSinResultados > 0 && intentosSinResultados < 4 && (
+        <div className="alert alert-info text-center rounded-3 shadow-sm" role="alert">
+          Buscando resultados... (Intento {intentosSinResultados} de 3)
+        </div>
+      )}
+
       {/* Mostrar resultados o mensaje de no resultados */}
-      {!cargando && resultados.length === 0 && busquedaRealizada && (
+      {!cargando && resultados.length === 0 && busquedaRealizada && intentosSinResultados >= 4 && (
         <div className="alert alert-info text-center rounded-3 shadow-sm" role="alert">
           No se encontraron resultados para "{busqueda}".
         </div>
