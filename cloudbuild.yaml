@@ -79,9 +79,9 @@ steps:
 
 availableSecrets:
   secretManager:
-    - versionName: secrets/_DOCKERFILE_USERNAME/versions/latest
+    - versionName: projects/onyx-messenger-461611-t7/secrets/_DOCKERFILE_USERNAME/versions/latest
       env: 'DOCKERFILE_USERNAME'
-    - versionName: secrets/_DOCKERFILE_PASSWORD/versions/latest
+    - versionName: projects/onyx-messenger-461611-t7/secrets/_DOCKERFILE_PASSWORD/versions/latest
       env: 'DOCKERFILE_PASSWORD'
 
 options:
