@@ -1,4 +1,15 @@
 steps:
+  # 0. Probar login y versión de Docker Compose
+  - name: "docker:28.2.2-cli"
+    id: "test-docker-compose-version"
+    entrypoint: "sh"
+    args:
+      - "-c"
+      - |
+        echo "$DOCKERFILE_PASSWORD" | docker login -u "$DOCKERFILE_USERNAME" --password-stdin
+        docker compose version
+    secretEnv: ['DOCKERFILE_USERNAME', 'DOCKERFILE_PASSWORD']
+
   # 1. Dar permisos de ejecución y compilar todos los servicios Java usando el script personalizado
   - name: "maven:3.9.9-eclipse-temurin-24"
     id: "chmod-and-compilar-java"
@@ -39,7 +50,7 @@ steps:
         mv frontend/.env.example frontend/.env
 
   # 5. Construir las imágenes Docker de todos los servicios definidos en docker-compose
-  - name: "docker/compose:1.29.2"
+  - name: "docker:28.2.2-cli"
     id: "build-docker"
     entrypoint: "sh"
     args:
@@ -48,17 +59,17 @@ steps:
         docker compose build
 
   # 6. Login en Docker Hub usando los secretos de usuario y contraseña
-  - name: "docker/compose:1.29.2"
+  - name: "docker:28.2.2-cli"
     id: "docker-login"
     entrypoint: "sh"
     args:
       - "-c"
       - |
-        echo "$$DOCKERFILE_PASSWORD" | docker login -u "$$DOCKERFILE_USERNAME" --password-stdin
+        echo "$DOCKERFILE_PASSWORD" | docker login -u "$DOCKERFILE_USERNAME" --password-stdin
     secretEnv: ['DOCKERFILE_USERNAME', 'DOCKERFILE_PASSWORD']
 
   # 7. Pushear las imágenes al registro
-  - name: "docker/compose:1.29.2"
+  - name: "docker:28.2.2-cli"
     id: "push-docker"
     entrypoint: "sh"
     args:
