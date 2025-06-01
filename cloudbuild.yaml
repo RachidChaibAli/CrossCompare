@@ -1,4 +1,13 @@
 steps:
+  # 0. Dar permisos de ejecución al script mvn.sh
+  - name: "maven:3.9.6-eclipse-temurin-21"
+    id: "chmod-mvn"
+    entrypoint: "bash"
+    args:
+      - "-c"
+      - |
+        chmod +x ./mvn.sh
+
   # 1. Compilar todos los servicios Java usando el script personalizado
   - name: "maven:3.9.6-eclipse-temurin-21"
     id: "compilar-java"
