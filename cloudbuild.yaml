@@ -6,7 +6,7 @@ steps:
     args:
       - "-c"
       - |
-        gcloud secrets versions access latest --secret=_DOCKERFILE_USERNAME > docker-username.txt
+        gcloud secrets versions access latest --secret=_DOCKER_USERNAME > docker-username.txt
 
   # -0. Recuperar la contraseña de Docker y guardarla en un archivo
   - name: "gcr.io/google.com/cloudsdktool/cloud-sdk"
@@ -15,7 +15,7 @@ steps:
     args:
       - "-c"
       - |
-        gcloud secrets versions access latest --secret=_DOCKERFILE_PASSWORD > docker-password.txt
+        gcloud secrets versions access latest --secret=_DOCKER_PASSWORD > docker-password.txt
 
   # 0. Probar login y versión de Docker Compose
   - name: "docker:28.2.2-cli"
