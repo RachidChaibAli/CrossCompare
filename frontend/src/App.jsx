@@ -1,6 +1,7 @@
 import axios from 'axios';
 // Se ha restaurado la importación de Bootstrap CSS.
 import 'bootstrap/dist/css/bootstrap.min.css';
+import 'bootstrap-icons/font/bootstrap-icons.css';
 import { useEffect, useState, useRef } from 'react';
 
 const API_URL = import.meta.env.VITE_API_URL;
@@ -209,6 +210,18 @@ function App() {
           </div>
         ))}
       </div>
+      {/* Footer siempre visible */}
+      <footer className="bg-light text-center text-lg-start fixed-bottom border-top shadow-sm py-2">
+        <div className="container d-flex flex-column flex-md-row justify-content-center align-items-center">
+          <span className="me-2">Desarrollado por <strong>@Rachid Chaib Ali</strong></span>
+          <a href="https://github.com/RachidChaibAli" target="_blank" rel="noopener noreferrer" className="mx-2 text-dark">
+            <i className="bi bi-github" style={{fontSize: '1.3rem', verticalAlign: 'middle'}}></i> GitHub
+          </a>
+          <a href="https://www.linkedin.com/in/rachid-chaib-ali-b93b462a4/" target="_blank" rel="noopener noreferrer" className="mx-2 text-dark">
+            <i className="bi bi-linkedin" style={{fontSize: '1.3rem', verticalAlign: 'middle'}}></i> LinkedIn
+          </a>
+        </div>
+      </footer>
     </div>
   );
 }
