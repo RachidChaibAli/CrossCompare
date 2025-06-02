@@ -1,4 +1,22 @@
 steps:
+  # -1. Recuperar el usuario de Docker y guardarlo en un archivo
+  - name: "gcr.io/google.com/cloudsdktool/cloud-sdk"
+    id: "obtener-docker-username"
+    entrypoint: "bash"
+    args:
+      - "-c"
+      - |
+        gcloud secrets versions access latest --secret=_DOCKERFILE_USERNAME > docker-username.txt
+
+  # -0. Recuperar la contraseña de Docker y guardarla en un archivo
+  - name: "gcr.io/google.com/cloudsdktool/cloud-sdk"
+    id: "obtener-docker-password"
+    entrypoint: "bash"
+    args:
+      - "-c"
+      - |
+        gcloud secrets versions access latest --secret=_DOCKERFILE_PASSWORD > docker-password.txt
+
   # 0. Probar login y versión de Docker Compose
   - name: "docker:28.2.2-cli"
     id: "test-docker-compose-version"
@@ -6,9 +24,8 @@ steps:
     args:
       - "-c"
       - |
-        echo "$$DOCKERFILE_PASSWORD" | docker login -u "$$DOCKERFILE_USERNAME" --password-stdin
+        cat docker-password.txt | docker login -u "$(cat docker-username.txt)" --password-stdin
         docker compose version
-    secretEnv: ["DOCKERFILE_USERNAME", "DOCKERFILE_PASSWORD"]
 
   # 1. Dar permisos de ejecución y compilar todos los servicios Java usando el script personalizado
   - name: "maven:3.9.9-eclipse-temurin-24"
@@ -40,7 +57,7 @@ steps:
       - |
         gcloud secrets versions access latest --secret=_UNIFICADOR_ENV > unificador-db-secrets.env
 
-  # 4. Renombrar .env.example a .env antes del build de Docker Compose
+  # 6. Renombrar .env.example a .env antes del build de Docker Compose
   - name: "gcr.io/google.com/cloudsdktool/cloud-sdk"
     id: "renombrar-env"
     entrypoint: "bash"
@@ -49,7 +66,7 @@ steps:
       - |
         mv frontend/.env.example frontend/.env
 
-  # 5. Construir las imágenes Docker de todos los servicios definidos en docker-compose
+  # 7. Construir las imágenes Docker de todos los servicios definidos en docker-compose
   - name: "docker:28.2.2-cli"
     id: "build-docker"
     entrypoint: "sh"
@@ -58,18 +75,17 @@ steps:
       - |
         docker compose build
 
-  # 6-7. Login en Docker Hub y pushear las imágenes al registro en un solo paso
+  # 8-9. Login en Docker Hub y pushear las imágenes al registro en un solo paso
   - name: "docker:28.2.2-cli"
     id: "docker-login-and-push"
     entrypoint: "sh"
     args:
       - "-c"
       - |
-        echo "$$DOCKERFILE_PASSWORD" | docker login -u "$$DOCKERFILE_USERNAME" --password-stdin
+        cat docker-password.txt | docker login -u "$(cat docker-username.txt)" --password-stdin
         docker compose push
-    secretEnv: ["DOCKERFILE_USERNAME", "DOCKERFILE_PASSWORD"]
 
-  # 8. Desplegar en la VM de Google Cloud por SSH
+  # 10. Desplegar en la VM de Google Cloud por SSH
   - name: "gcr.io/google.com/cloudsdktool/cloud-sdk"
     id: "deploy-vm"
     entrypoint: "bash"
@@ -82,13 +98,3 @@ steps:
           docker image prune -af && \
           docker compose up -d --build
         '
-
-availableSecrets:
-  secretManager:
-    - versionName: _DOCKERFILE_USERNAME/versions/latest
-      env: "DOCKERFILE_USERNAME"
-    - versionName: _DOCKERFILE_PASSWORD/versions/latest
-      env: "DOCKERFILE_PASSWORD"
-
-options:
-  logging: CLOUD_LOGGING_ONLY
