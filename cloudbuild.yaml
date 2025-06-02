@@ -6,9 +6,9 @@ steps:
     args:
       - "-c"
       - |
-        echo "$DOCKERFILE_PASSWORD" | docker login -u "$DOCKERFILE_USERNAME" --password-stdin
+        echo "$$DOCKERFILE_PASSWORD" | docker login -u "$$DOCKERFILE_USERNAME" --password-stdin
         docker compose version
-    secretEnv: ['DOCKERFILE_USERNAME', 'DOCKERFILE_PASSWORD']
+    secretEnv: ["DOCKERFILE_USERNAME", "DOCKERFILE_PASSWORD"]
 
   # 1. Dar permisos de ejecución y compilar todos los servicios Java usando el script personalizado
   - name: "maven:3.9.9-eclipse-temurin-24"
@@ -58,31 +58,23 @@ steps:
       - |
         docker compose build
 
-  # 6. Login en Docker Hub usando los secretos de usuario y contraseña
+  # 6-7. Login en Docker Hub y pushear las imágenes al registro en un solo paso
   - name: "docker:28.2.2-cli"
-    id: "docker-login"
+    id: "docker-login-and-push"
     entrypoint: "sh"
     args:
       - "-c"
       - |
-        echo "$DOCKERFILE_PASSWORD" | docker login -u "$DOCKERFILE_USERNAME" --password-stdin
-    secretEnv: ['DOCKERFILE_USERNAME', 'DOCKERFILE_PASSWORD']
-
-  # 7. Pushear las imágenes al registro
-  - name: "docker:28.2.2-cli"
-    id: "push-docker"
-    entrypoint: "sh"
-    args:
-      - "-c"
-      - |
+        echo "$$DOCKERFILE_PASSWORD" | docker login -u "$$DOCKERFILE_USERNAME" --password-stdin
         docker compose push
+    secretEnv: ["DOCKERFILE_USERNAME", "DOCKERFILE_PASSWORD"]
 
   # 8. Desplegar en la VM de Google Cloud por SSH
-  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
-    id: 'deploy-vm'
-    entrypoint: 'bash'
+  - name: "gcr.io/google.com/cloudsdktool/cloud-sdk"
+    id: "deploy-vm"
+    entrypoint: "bash"
     args:
-      - '-c'
+      - "-c"
       - |
         gcloud compute ssh crosscompare --zone us-central1-c --project onyx-messenger-461611-t7 --command '
           cd /home/rachidchaibali03 && \
@@ -94,9 +86,9 @@ steps:
 availableSecrets:
   secretManager:
     - versionName: projects/onyx-messenger-461611-t7/secrets/_DOCKERFILE_USERNAME/versions/latest
-      env: 'DOCKERFILE_USERNAME'
+      env: "DOCKERFILE_USERNAME"
     - versionName: projects/onyx-messenger-461611-t7/secrets/_DOCKERFILE_PASSWORD/versions/latest
-      env: 'DOCKERFILE_PASSWORD'
+      env: "DOCKERFILE_PASSWORD"
 
 options:
   logging: CLOUD_LOGGING_ONLY
